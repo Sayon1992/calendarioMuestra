@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   TableContainer,
   Paper,
@@ -8,24 +8,75 @@ import {
   Toolbar,
   TableCell,
   TableBody,
+  Typography,
 } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import moment from "moment";
 import { v4 as uuidv4 } from "uuid";
-
-const useStyles = makeStyles({
-  table: {
-    minWidth: 650,
-  },
-});
+import { useDispatch, useSelector } from "react-redux";
+import * as calendarActions from "../store/actions/calendar";
 
 const Month = (props) => {
+  const storeColor = useSelector((state) => state.todo.color);
+  const useStyles = makeStyles({
+    paper: {
+      maxWidth: 450,
+      maxHeight: 470,
+      marginTop: 30,
+      boxShadow: "5px 5px 5px",
+    },
+    table: {
+      maxWidth: 450,
+      maxHeight: 470,
+    },
+    highLight: {
+      backgroundColor: storeColor,
+      opacity: "100%",
+    },
+    toolbar: {
+      alignItems: "center",
+      justifyContent: "center",
+      flex: 1,
+    },
+    day: {
+      cursor: "pointer",
+    },
+    month: {
+      fontFamily: "Roboto",
+      fontWeight: "bold",
+    },
+  });
+
   const classes = useStyles();
+
   let monthNumber;
   let emptySpace = [];
   let days = [];
   let tableCells = [];
   let tableRows = [];
+
+  const dispatch = useDispatch();
+
+  const elRefs = useRef([]);
+
+  const storeTodo = useSelector((state) => state.todo.todoSelected);
+  const storeCalendar = useSelector((state) => state.calendar.todoDays);
+
+  const marcarTarea = (e, day, month, index) => {
+    console.log(elRefs[day - 1]);
+    dispatch(calendarActions.addDayTodo(day, month, storeColor, storeTodo));
+    let verifyClass = e.target.classList.value.includes(classes.highLight);
+    if (verifyClass) {
+      e.target.classList.remove(classes.highLight);
+    } else {
+      e.target.classList.add(classes.highLight);
+    }
+  };
+
+  const marcarTareaPorSet = (day) => {
+    elRefs[day - 1].current.className = classes.highLight;
+  };
+
   switch (props.month) {
     case "Enero":
       monthNumber = 1;
@@ -80,7 +131,28 @@ const Month = (props) => {
   }
 
   for (let i = 1; i < daysInMonth; i++) {
-    days.push(<TableCell key={uuidv4()}>{i}</TableCell>);
+    elRefs.current[i - 1] = React.createRef();
+  }
+
+  for (let day = 1; day < daysInMonth; day++) {
+    days.push(
+      <TableCell
+        onClick={(e) => {
+          marcarTarea(e, day, monthNumber);
+        }}
+        key={`${day}-${monthNumber}`}
+        ref={elRefs[day - 1]}
+      >
+        {/* {storeCalendar.map((dayInCalendar) => {
+          if (dayInCalendar.day === day) {
+            if (dayInCalendar.month === monthNumber) {
+              marcarTareaPorSet(day, monthNumber);
+            }
+          }
+        })} */}
+        {day}
+      </TableCell>
+    );
   }
 
   let totalDays = [...emptySpace, ...days];
@@ -100,14 +172,20 @@ const Month = (props) => {
   });
 
   let formatedDays = tableRows.map((day, index) => {
-    return <TableRow key={uuidv4()}>{day}</TableRow>;
+    return (
+      <TableRow className={classes.day} key={uuidv4()}>
+        {day}
+      </TableRow>
+    );
   });
 
   return (
-    <Paper key={props.key}>
-      <Toolbar>{props.month}</Toolbar>
-      <TableContainer>
-        <Table size="small" className={classes.table}>
+    <Paper className={classes.paper} key={uuidv4()}>
+      <Toolbar className={classes.toolbar}>
+        <Typography className={classes.month}>{props.month}</Typography>
+      </Toolbar>
+      <TableContainer className={classes.table}>
+        <Table size="medium">
           <TableHead>
             <TableRow>
               <TableCell>Dom</TableCell>
